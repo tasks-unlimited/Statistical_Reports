@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             throw new Error(`Failed to fetch data. HTTP Status: ${response.status}`);
         }
         
-const csvString = await response.text();
+        const csvString = await response.text();
         const dataObjects = parseCSV(csvString);
         populateDOM(dataObjects);
 
@@ -231,7 +231,7 @@ async function renderDynamicCharts() {
                 if (keys.length >= 2) {
                     const label = row[keys[0]];
                     
-                    if (label.toLowerCase() !== 'total' && !label.toLowerCase().includes('total number')) {
+                    if (label && label.toLowerCase() !== 'total' && !label.toLowerCase().includes('total number')) {
                         labels.push(label);
                         
                         if (chartType === 'scatter' || chartType === 'bubble') {
@@ -297,7 +297,7 @@ async function renderDynamicCharts() {
                                         const percentage = Math.round((context.raw / total) * 100);
                                         return ` ${context.label}: ${context.raw} (${percentage}%)`;
                                     }
-                                    if (context.raw.y !== undefined) {
+                                    if (context.raw && context.raw.y !== undefined) {
                                         return ` ${context.label}: (${context.raw.x}, ${context.raw.y})`;
                                     }
                                     return ` ${context.label}: ${context.raw}`;
@@ -550,7 +550,7 @@ function populateDOM(data) {
 
         // --- 4. THE DYNAMIC BRAIN (Pure Sequential Architecture) ---
         if (isDynamicZone && dynamicContainer) {
-
+            
             // Fallback: If no section wrapper exists yet, create an invisible one
             if (!activeSectionWrapper) {
                 activeSectionWrapper = document.createElement('div');
@@ -652,7 +652,7 @@ function populateDOM(data) {
                 return;
             }
 
-            // --- B. Floating H1 vs White Card H2 Architecture ---
+            // --- C. Floating H1 vs White Card H2 Architecture ---
             const isHeader = rawType === 'h1' || rawType === 'h2';
             
             if (rawType === 'h1') {
@@ -667,7 +667,7 @@ function populateDOM(data) {
                 activeTable = null; 
             }
 
-            // --- C. Core Content Population ---
+            // --- D. Core Content Population ---
             const tableParts = ['table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'];
             const textGroup = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span', 'blockquote', 'ul', 'ol', 'li', 'hr', 'br', 'a', 'strong', 'em'];
             const trimmedBody = Content_Body ? Content_Body.trim() : '';

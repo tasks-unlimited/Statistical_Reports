@@ -653,13 +653,29 @@ function populateDOM(data) {
                 return;
             }
 
-            // --- C. Flowing Text Architecture ---
+            // --- C. Flowing Text & Structural Architecture ---
             const isHeader = rawType === 'h1' || rawType === 'h2';
             
             if (isHeader) {
                 // Headers no longer create mega-blocks! They flow naturally.
                 activeCard = null; 
                 activeTable = null;
+            }
+
+            // Manual Page Break Override
+            if (rawType === 'page break' || rawType === 'pagebreak') {
+                const pageBreak = document.createElement('div');
+                pageBreak.className = 'print-page-break';
+                // Add a subtle invisible spacer for the web view
+                pageBreak.style.width = '100%';
+                pageBreak.style.height = '24px';
+                
+                activeSectionWrapper.appendChild(pageBreak);
+                
+                // Ensure nothing accidentally attaches to previous elements
+                activeCard = null; 
+                activeTable = null;
+                return;
             }
 
             // --- D. Core Content Population ---

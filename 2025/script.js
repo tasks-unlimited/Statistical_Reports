@@ -18,6 +18,21 @@ const donutChartsConfig = [
     { id: 'primary_table', gid: '824597336', type: 'polarArea' }
 ];
 
+// Human-friendly dictionary for Dynamic Chart Generation
+const chartTypeDictionary = {
+    'doughnut chart': 'doughnut',
+    'pie chart': 'pie',
+    'doughnut and pie charts': 'doughnut',
+    'bar chart': 'bar',
+    'line chart': 'line',
+    'area chart': 'line',
+    'polar area chart': 'polarArea',
+    'radar chart': 'radar',
+    'scatter chart': 'scatter',
+    'bubble chart': 'bubble',
+    'mixed chart types': 'bar'
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Fetch main text_blocks data using the URL from update_link_here.js
@@ -32,6 +47,9 @@ const csvString = await response.text();
 
         // Fetch and render donut charts concurrently from the other tabs
         await fetchAndRenderDonuts();
+        
+        // Fetch and render the new purely dynamic Chart.js canvases
+        await renderDynamicCharts();
 
         // Hide the pure white preloader now that the layout is fully expanded
         const preloader = document.getElementById('page-preloader');
@@ -172,6 +190,135 @@ async function fetchAndRenderDonuts() {
     });
 
     // Run all fetches concurrently
+    await Promise.all(fetchPromises);
+}
+
+/**
+ * Fetch and Render the NEW purely dynamic charts (Includes Multicolumn logic)
+ */
+async function renderDynamicCharts() {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const chartColors = [
+        rootStyles.getPropertyValue('--navy').trim(),
+        rootStyles.getPropertyValue('--orange').trim(),
+        rootStyles.getPropertyValue('--teal').trim(),
+        rootStyles.getPropertyValue('--orange-light').trim(),
+        rootStyles.getPropertyValue('--teal-light').trim(),
+        rootStyles.getPropertyValue('--mid-gray').trim(),
+        rootStyles.getPropertyValue('--navy-light').trim(),
+        rootStyles.getPropertyValue('--warm-gray').trim()
+    ];
+
+    const chartContainers = document.querySelectorAll('.dynamic-chart-container');
+    if (chartContainers.length === 0) return;
+
+    const fetchPromises = Array.from(chartContainers).map(async (container) => {
+        const gid = container.getAttribute('data-chart-gid');
+        const chartType = container.getAttribute('data-chart-type');
+        const isArea = container.getAttribute('data-is-area') === 'true';
+        
+        const baseUrl = MASTER_SHEET_URL.split('&gid=')[0];
+        const chartUrl = `${baseUrl}&gid=${gid}&single=true`;
+
+        try {
+            const res = await fetch(chartUrl);
+            if (!res.ok) throw new Error(`Failed to fetch gid ${gid}`);
+            const csvStr = await res.text();
+            
+            const parsedData = parseCSV(csvStr);
+            const labels = [];
+            const data = [];
+            
+            parsedData.forEach(row => {
+                const keys = Object.keys(row);
+                if (keys.length >= 2) {
+                    const label = row[keys[0]];
+                    
+                    if (label.toLowerCase() !== 'total' && !label.toLowerCase().includes('total number')) {
+                        labels.push(label);
+                        
+                        if (chartType === 'scatter' || chartType === 'bubble') {
+                            const xVal = parseFloat((row[keys[1]] || '0').replace(/,/g, ''));
+                            const yVal = parseFloat((row[keys[2]] || '0').replace(/,/g, ''));
+                            const rVal = chartType === 'bubble' ? parseFloat((row[keys[3]] || '0').replace(/,/g, '')) : 5;
+                            data.push({ x: xVal, y: yVal, r: rVal });
+                        } else {
+                            data.push(parseFloat((row[keys[1]] || '0').replace(/%/g, '').replace(/,/g, '')));
+                        }
+                    }
+                }
+            });
+            
+            const canvas = container.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const isCircular = ['pie', 'doughnut', 'polarArea'].includes(chartType);
+
+            const dataset = {
+                label: 'Data',
+                data: data,
+                backgroundColor: isCircular ? chartColors : chartColors[0],
+                borderColor: isCircular ? rootStyles.getPropertyValue('--white').trim() : chartColors[0],
+                borderWidth: 2,
+                hoverOffset: 4
+            };
+
+            if (isArea) {
+                dataset.fill = true;
+                dataset.backgroundColor = chartColors[2] + '40'; // Teal transparent
+                dataset.borderColor = chartColors[2];
+            } else if (chartType === 'line' || chartType === 'radar' || chartType === 'scatter') {
+                dataset.backgroundColor = chartColors[0]; // Point fill
+                dataset.borderColor = chartColors[0];
+            }
+
+            new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [dataset]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: isCircular, 
+                            position: 'bottom',
+                            labels: {
+                                font: { family: "'Open Sans', sans-serif", size: 12 },
+                                color: rootStyles.getPropertyValue('--warm-gray').trim(),
+                                padding: 15,
+                                usePointStyle: true,
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (isCircular) {
+                                        const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                        const percentage = Math.round((context.raw / total) * 100);
+                                        return ` ${context.label}: ${context.raw} (${percentage}%)`;
+                                    }
+                                    if (context.raw.y !== undefined) {
+                                        return ` ${context.label}: (${context.raw.x}, ${context.raw.y})`;
+                                    }
+                                    return ` ${context.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: chartType === 'doughnut' ? '65%' : undefined,
+                    scales: isCircular || chartType === 'radar' ? undefined : {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error(`Error processing dynamic chart ${gid}:`, err);
+        }
+    });
+
     await Promise.all(fetchPromises);
 }
 
@@ -404,16 +551,52 @@ function populateDOM(data) {
             if (!isDynamicZone) return;
         }
 
-        // --- 4. THE DYNAMIC BRAIN (Pure Sequential Architecture) ---
-        if (isDynamicZone && dynamicContainer) {
-            
+        // Fallback: If no section wrapper exists yet, create an invisible one
             if (!activeSectionWrapper) {
                 activeSectionWrapper = document.createElement('div');
                 activeSectionWrapper.style.position = 'relative';
                 dynamicContainer.appendChild(activeSectionWrapper);
             }
 
-            // --- A. The Sweeping Index ---
+            // --- A. Dynamic Chart.js Generator ---
+            const translatedChartType = chartTypeDictionary[rawType];
+            if (translatedChartType) {
+                activeCard = document.createElement('div');
+                activeCard.className = 'card animate-in delay-2';
+                activeSectionWrapper.appendChild(activeCard);
+                activeTable = null; 
+
+                // Optional Title: Only displays if Content_Body is not empty
+                if (Content_Body && Content_Body.trim() !== '') {
+                    const chartTitle = document.createElement('h3');
+                    chartTitle.style.marginTop = '0';
+                    chartTitle.style.marginBottom = '20px';
+                    chartTitle.innerText = Content_Body.replace(/^#+\s/, '').trim();
+                    activeCard.appendChild(chartTitle);
+                }
+
+                // Strip the optional 'chart_' prefix to get the raw GID
+                const gid = Unique_ID.replace('chart_', '').trim();
+                
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'dynamic-chart-container';
+                chartContainer.setAttribute('data-chart-gid', gid);
+                chartContainer.setAttribute('data-chart-type', translatedChartType);
+                if (rawType === 'area chart') chartContainer.setAttribute('data-is-area', 'true');
+                
+                chartContainer.style.position = 'relative';
+                chartContainer.style.width = '100%';
+                chartContainer.style.aspectRatio = ['pie', 'doughnut', 'polarArea', 'radar'].includes(translatedChartType) ? '1 / 1' : '1.8 / 1';
+                chartContainer.style.maxHeight = '380px';
+                chartContainer.style.display = 'flex';
+                chartContainer.style.justifyContent = 'center';
+                
+                chartContainer.innerHTML = '<canvas></canvas>';
+                activeCard.appendChild(chartContainer);
+                return;
+            }
+
+            // --- B. The Sweeping Index ---
             if (rawType === 'index') {
                 const indexCard = document.createElement('div');
                 indexCard.className = 'card glossary-index-card animate-in delay-2';

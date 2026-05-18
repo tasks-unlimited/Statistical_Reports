@@ -653,22 +653,16 @@ function populateDOM(data) {
                 return;
             }
 
-            // --- B. Floating H1 vs White Card H2 Architecture ---
+            // --- C. Flowing Text Architecture ---
             const isHeader = rawType === 'h1' || rawType === 'h2';
             
-            if (rawType === 'h1') {
-                // H1 triggers a background float (breaks out of cards)
+            if (isHeader) {
+                // Headers no longer create mega-blocks! They flow naturally.
                 activeCard = null; 
                 activeTable = null;
-            } else if (rawType === 'h2') {
-                // H2 triggers a brand new crisp white card
-                activeCard = document.createElement('div');
-                activeCard.className = 'card animate-in delay-2';
-                activeSectionWrapper.appendChild(activeCard);
-                activeTable = null; 
             }
 
-            // --- C. Core Content Population ---
+            // --- D. Core Content Population ---
             const tableParts = ['table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'];
             const textGroup = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span', 'blockquote', 'ul', 'ol', 'li', 'hr', 'br', 'a', 'strong', 'em'];
             const trimmedBody = Content_Body ? Content_Body.trim() : '';
@@ -676,6 +670,12 @@ function populateDOM(data) {
 
             if (tableParts.includes(rawType)) {
                 if (rawType === 'table') {
+                    // Explicitly create a card wrapper JUST for the table
+                    const tableCard = document.createElement('div');
+                    tableCard.className = 'card animate-in delay-2';
+                    activeSectionWrapper.appendChild(tableCard);
+                    activeCard = null; // Prevent text from getting trapped!
+
                     if (Content_Body && Content_Body.includes('|')) {
                         const tempWrap = document.createElement('div');
                         tempWrap.innerHTML = parseMarkdownTable(Content_Body);
@@ -683,12 +683,10 @@ function populateDOM(data) {
                             const generatedTable = tempWrap.firstElementChild.querySelector('table');
                             if (generatedTable) {
                                 generatedTable.id = 'table_' + Unique_ID;
-                                // FIX: Assign the table to memory so subsequent tfoot tags can attach perfectly!
                                 activeTable = generatedTable;
                                 activeTableParent = generatedTable;
                             }
-                            if (activeCard) activeCard.appendChild(tempWrap.firstElementChild);
-                            else activeSectionWrapper.appendChild(tempWrap.firstElementChild);
+                            tableCard.appendChild(tempWrap.firstElementChild);
                         }
                     } else {
                         const el = document.createElement('table');
@@ -698,8 +696,7 @@ function populateDOM(data) {
                         wrap.className = 'glossary-table-wrap';
                         wrap.appendChild(el);
                         
-                        if (activeCard) activeCard.appendChild(wrap);
-                        else activeSectionWrapper.appendChild(wrap);
+                        tableCard.appendChild(wrap);
                         
                         activeTable = el;
                         activeTableParent = el;
@@ -749,16 +746,8 @@ function populateDOM(data) {
                     activeIndexToc.appendChild(li);
                 }
 
-                if (isHeader && rawType !== 'h1') {
-                    el.className = 'card-title';
-                    el.style.border = 'none';
-                    el.style.marginBottom = '0';
-                }
-
-                if (rawType === 'h1') {
-                    // Give floating H1s an entrance animation
-                    el.classList.add('animate-in', 'delay-2');
-                }
+                // Since everything floats freely now, we give all text elements the entrance animation
+                el.classList.add('animate-in', 'delay-2');
 
                 if (isImage) {
                     el.innerHTML = `<img src="${trimmedBody}" alt="Graphic" style="max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; display: block;">`;
@@ -768,13 +757,10 @@ function populateDOM(data) {
                     el.innerHTML = Content_Body ? Content_Body.replace(/^#+\s/, '') : '';
                 }
 
-                if (activeCard) {
-                    activeCard.appendChild(el);
-                } else {
-                    // Floating items get slight padding to snap to the grid beautifully
-                    el.style.padding = '0 12px';
-                    activeSectionWrapper.appendChild(el);
-                }
+                // Everything floats line-by-line! Slight padding snaps it to the grid beautifully.
+                el.style.padding = '0 12px';
+                activeSectionWrapper.appendChild(el);
+                activeCard = null; // Failsafe
             }
         }
     });

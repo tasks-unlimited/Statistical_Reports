@@ -548,7 +548,10 @@ function populateDOM(data) {
             if (!isDynamicZone) return;
         }
 
-        // Fallback: If no section wrapper exists yet, create an invisible one
+        // --- 4. THE DYNAMIC BRAIN (Pure Sequential Architecture) ---
+        if (isDynamicZone && dynamicContainer) {
+
+            // Fallback: If no section wrapper exists yet, create an invisible one
             if (!activeSectionWrapper) {
                 activeSectionWrapper = document.createElement('div');
                 activeSectionWrapper.style.position = 'relative';

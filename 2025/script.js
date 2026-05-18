@@ -561,10 +561,11 @@ function populateDOM(data) {
             // --- A. Dynamic Chart "Sticky Note" Placeholder ---
             const translatedChartType = chartTypeDictionary[rawType];
             if (translatedChartType) {
-                activeCard = document.createElement('div');
-                activeCard.className = 'card animate-in delay-2';
-                activeSectionWrapper.appendChild(activeCard);
+                const chartCard = document.createElement('div');
+                chartCard.className = 'card animate-in delay-2';
+                activeSectionWrapper.appendChild(chartCard);
                 activeTable = null; 
+                activeCard = null; // Prevent text from getting trapped!
 
                 // Optional Title: Only displays if Content_Body is not empty
                 if (Content_Body && Content_Body.trim() !== '') {
@@ -572,7 +573,7 @@ function populateDOM(data) {
                     chartTitle.style.marginTop = '0';
                     chartTitle.style.marginBottom = '20px';
                     chartTitle.innerText = Content_Body.replace(/^#+\s/, '').trim();
-                    activeCard.appendChild(chartTitle);
+                    chartCard.appendChild(chartTitle);
                 }
 
                 // Strip the optional 'chart_' prefix to get the raw GID
@@ -592,7 +593,7 @@ function populateDOM(data) {
                 chartContainer.style.justifyContent = 'center';
                 
                 chartContainer.innerHTML = '<canvas></canvas>';
-                activeCard.appendChild(chartContainer);
+                chartCard.appendChild(chartContainer);
                 return;
             }
 

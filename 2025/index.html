@@ -366,14 +366,21 @@
  #dynamic-content-zone .card:not(:has(table)) {
     background: transparent !important;
     border: none !important;
-    padding: 0 0 16px 0 !important;
-    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 10px !important;
+    /* THE FIX: Allow page breaks inside these invisible wrappers so text flows naturally! */
+    break-inside: auto !important; 
+    page-break-inside: auto !important; 
  }
  #dynamic-content-zone .card:has(table) {
     background: var(--white) !important;
     border: 1px solid var(--navy) !important;
     padding: 16px !important;
     margin-bottom: 16px !important;
+    /* Keep table containers solid and un-broken */
+    break-inside: avoid !important; 
+    page-break-inside: avoid !important;
  }
 
  /* Glossary Tables (Navy Lines, No Scrollbars, Compact) */

@@ -267,7 +267,7 @@
  /* Base Page Resets */
  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: var(--white) !important; }
 .top-nav, #client_satisfaction_data_link, #client_satisfaction_link_text { display: none !important; }
- .glossary-dropdown-wrap, .glossary-toc-wrap, #glossary-index { display: none !important; }
+ .glossary-dropdown-wrap, .glossary-toc-wrap, #glossary-index, .glossary-index-card { display: none !important; }
  .jump-link { display: none !important; }
 
  /* Strip all drop shadows globally for print */
@@ -313,8 +313,8 @@
 
 /* Section Stripes Shaping */
  .section-stripe { 
-    border-radius: 24px !important; 
-    padding: 8px 16px 10px !important; 
+    border-radius: 16px !important; 
+    padding: 6px !important; 
     margin-top: 0 !important; /* Fixes the negative margin overlap on headers! */
     margin-bottom: 10px !important; 
     width: auto !important; /* Keeps it within margins */
@@ -324,8 +324,8 @@
  /* Header Adjustments (Squeezed for Print) */
  .section-header { margin: 10px 0 5px !important; padding-top: 0 !important; }
 
- /* Remove borders and shadows inside stripes for a clean floating look */
- .section-stripe .card, .section-stripe .admit-hero-card, .section-stripe .outcome-card { border: none !important; box-shadow: none !important; outline: none !important; }
+ /* Remove borders, shadows, and bottom margins inside stripes for a tighter fit */
+ .section-stripe .card, .section-stripe .admit-hero-card, .section-stripe .outcome-card { border: none !important; box-shadow: none !important; outline: none !important; margin-bottom: 0 !important; }
 
  /* Grids: Forced to maintain web layout (4-col outcome, 3-col/2-col charts) */
  .outcome-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; margin-top: 0 !important; }
